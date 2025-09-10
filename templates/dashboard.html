@@ -1,0 +1,63 @@
+{% extends 'index.html' %}
+
+{% block content %}
+<div class="col-lg-10">
+ 
+    <div class="card card-custom">
+        <div class="card-body video-responsive">
+            <!-- Placeholder for live video feed -->
+            <img id="liveStream" src="{{ url_for('video_feed') }}" alt="Live Stream">
+        </div>
+        <!-- Button to capture image from live stream -->
+        <button class="btn btn-primary btn-lg" onclick="captureImage()" style="background-color: #006400;">Capture Image</button>
+        <!-- Button to stop the application -->
+        <button class="btn btn-danger" onclick="shutdownPi()">Shutdown system</button>
+
+        <!-- Placeholder for captured image -->
+        <div id="capturedImageContainer" class="text-center mt-3"></div>
+    </div>
+</div>
+
+<script>
+async function captureImage() {
+    try {
+        const response = await fetch('/capture_img');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        const imgContainer = document.getElementById('capturedImageContainer');
+        imgContainer.innerHTML = <p>${data.message}</p>;
+        setTimeout(() => {
+            document.getElementById('liveStream').src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
+        }, 2000);
+    } catch (error) {
+        console.error('Error capturing image:', error);
+        alert('Failed to capture image. Please try again.');
+    }
+}
+
+async function shutdownPi() {
+    if (confirm("Are you sure you want to shut down the system? This will power off the Raspberry Pi.")) {
+        try {
+            const response = await fetch('/shutdown', {
+                method: 'POST'
+            });
+            if (response.ok) {
+                alert("Shutting down the Raspberry Pi...");
+            } else {
+                alert("Failed to shut down the Raspberry Pi.");
+            }
+        } catch (error) {
+            console.error("Error shutting down the Raspberry Pi:", error);
+            alert("An error occurred while attempting to shut down.");
+        }
+    }
+}
+
+
+
+
+
+</script>
+{% endblock %}

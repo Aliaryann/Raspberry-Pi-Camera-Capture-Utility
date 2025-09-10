@@ -1,0 +1,106 @@
+/* General Layout and Styling */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f0f4f8;
+    margin: 0;
+    padding-top: 80px;
+    color: #333;
+}
+
+/* Centered Video Container with Shadow */
+.video-responsive {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    display: block;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-responsive:hover {
+    transform: scale(1.02); /* Slight zoom on hover */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.video-responsive img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+}
+
+/* Button Group Styling */
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Button Styles */
+.btn-success, .btn-danger {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Capture Button (Success) */
+.btn-success {
+    background-color: #5cb85c;
+}
+
+.btn-success:hover {
+    background-color: #4cae4c;
+    transform: translateY(-2px); /* Lift effect */
+}
+
+.btn-success:active {
+    background-color: #449d44;
+    transform: translateY(1px); /* Push down on click */
+}
+
+/* Stop Button (Danger) */
+.btn-danger {
+    background-color: #d9534f;
+}
+
+.btn-danger:hover {
+    background-color: #c9302c;
+    transform: translateY(-2px);
+}
+
+.btn-danger:active {
+    background-color: #ac2925;
+    transform: translateY(1px);
+}
+
+/* Add padding and max-width to the main container */
+.container {
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+    .button-group {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn-success, .btn-danger {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .video-responsive {
+        width: 100%;
+    }
+}

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Raspberry Pi Camera WebApp</title>
+
+    <!-- Bootstrap CSS (for styling) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        /* Full viewport height for the background */
+        .background-wrapper {
+            background-image: url('/static/your_background_image.jpg'); /* Ensure the path is correct */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh; /* Full viewport height */
+            display: flex;
+            flex-direction: column; /* Allow content to stack vertically */
+        }
+
+        #battery-capacity.low {
+           color: #ff4d4d; /* Red for low battery level */
+        }
+
+        /* Navbar Styling */
+        .navbar {
+            background: linear-gradient(45deg, #1a2d83, #6b9bf4);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand {
+            color: rgb(255, 255, 255) !important;
+            font-weight: bold;
+        }
+        .navbar-nav .nav-link {
+            color: rgb(255, 255, 255) !important;
+            font-size: 1.2rem;
+        }
+        .navbar-nav .nav-link.active {
+            border-bottom: 2px solid white;
+        }
+
+        /* Battery Status in Navbar */
+        .navbar-battery-status {
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+        .battery-icon {
+            position: relative;
+            width: 50px;
+            height: 25px;
+            border: 2px solid #ffffff;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .battery-icon::after {
+            content: "";
+            position: absolute;
+            top: 5px;
+            right: -6px;
+            width: 4px;
+            height: 9px;
+            background: #ffffff;
+            border-radius: 1px;
+        }
+        .battery-fill {
+            height: 100%;
+            width: 0%;
+            background: #28a745;
+            border-radius: 2px 0 0 2px;
+        }
+        .battery-fill.low {
+            background: #ff4d4d;
+        }
+
+        /* Change color if battery is low */
+        #battery-fill.low {
+            background: #ff4d4d; /* Red for low battery level */
+        }
+
+        /* Custom Card Styling */
+        .card-custom {
+            padding: 2px;
+            border-radius: 2px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            background: rgb(125, 120, 120);
+            margin-top: -10px; /* Pull the card up a bit into the hero section */
+        }
+
+        /* Video Container Styling */
+        .video-responsive {
+            text-align: center;
+            margin-top: 10px;
+        }
+        img#liveStream {
+            width: 90%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+   /* Modern Button Styling */
+.btn-primary, .btn-danger {
+    padding: 14px 24px;              /* Increase padding for a more substantial feel */
+    font-size: 1.1rem;
+    border-radius: 50px;             /* Make buttons fully rounded */
+    font-weight: normal;               /* Bold font for emphasis */
+    border: none;
+    transition: all 0.4s ease;       /* Smooth transition for all properties */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    text-transform: uppercase;       /* Capitalize text for a modern touch */
+    letter-spacing: 1px;             /* Add space between letters for readability */
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #28a745, #218838);  /* Gradient background for primary button */
+    color: white;                    /* White text for better contrast */
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #218838, #1e7e34);  /* Darker gradient on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1); /* Increase shadow on hover */
+    transform: translateY(-4px);     /* Slight lift on hover for 3D effect */
+}
+
+.btn-danger {
+    background: linear-gradient(45deg, #ff4d4d, #ff1a1a); /* Gradient background for danger button */
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(45deg, #ff1a1a, #e60000); /* Darker gradient on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Focus state for accessibility */
+.btn-primary:focus, .btn-danger:focus {
+    outline: none;                   /* Remove default focus outline */
+    box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.3); /* Custom focus shadow */
+}
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(45deg, #1a2d83, #6b9bf4);
+            color: white;
+            margin-top: 40px;
+        }
+        footer a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Wrapper -->
+    <div class="background-wrapper">
+
+        <!-- Battery Warning Message -->
+    <div id="battery-warning" style="display: none; padding: 10px; background-color: #ffcccc; color: #b22222; text-align: center; font-weight: bold;">
+        Battery is low! Please plug in the charger.
+    </div>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">🐄 Cow Health Monitor</a>
+                <div class="navbar-battery-status">
+                    <div class="battery-icon">
+                        <div id="navbar-battery-fill" class="battery-fill"></div>
+                    </div>
+                    <span id="battery-percentage">-</span>%
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/">Main Page</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/photostorage">photo album</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+       
+
+                            <!-- Captured Image and Report Section -->
+            <div id="capturedImageContainer" class="text-center mt-3">
+               <img id="capturedImage" src="" alt="Captured Image" style="display: none; max-width: 100%; border-radius: 10px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);">
+               <div id="report" style="display: none; margin-top: 15px; font-size: 1.2rem; color: #ffffff;"></div>
+            </div>
+        
+            <div id="battery-status">
+                
+                <div id="battery-container">
+                    <div id="battery-fill"></div>
+                    <div id="battery-tip"></div>
+                </div>
+            </div>
+            
+               
+        <!-- Main Content Area -->
+        <div class="container">
+            <div class="row justify-content-center">
+                {% block content %}
+                <!-- Page-specific content will go here -->
+                <div class="col-md-8">
+                    <div class="card-custom">
+                        <div class="video-responsive">
+                            <h3>Live Cow Monitoring Feed</h3>
+                            <img id="liveStream" src="/video_feed" alt="Camera Stream">
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="text-center mt-4">
+                           <button class="btn btn-primary" onclick="captureImage()">Capture Health Snapshot</button>
+                            <button class="btn btn-danger" onclick="stopStream()">Stop Monitoring</button>
+                        </div>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2024 Cow Health Monitor | Powered by Technology and Care | <a href="https://www.vegaresearchlabs.com">vegaresearchlabs</a></p>
+        </footer>
+
+    </div> <!-- End of background-wrapper -->
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+ 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <!-- Custom JS for capturing image and stopping stream -->
+    <script>
+    
+    async function captureImage() {
+    try {
+        const response = await fetch('/capture_img', { method: 'POST' });
+        if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+        
+        const data = await response.json();
+        alert(data.message);  // Show the success message in an alert
+    } catch (error) {
+        console.error("Error capturing image:", error);
+        alert("Failed to capture image.");
+    }
+}
+
+
+
+async function shutdownPi() {
+    if (confirm("Are you sure you want to shut down the system? This will power off the Raspberry Pi.")) {
+        try {
+            const response = await fetch('/shutdown', {
+                method: 'POST'
+            });
+            if (response.ok) {
+                alert("Shutting down the Raspberry Pi...");
+            } else {
+                alert("Failed to shut down the Raspberry Pi.");
+            }
+        } catch (error) {
+            console.error("Error shutting down the Raspberry Pi:", error);
+            alert("An error occurred while attempting to shut down.");
+        }
+    }
+}
+
+
+
+async function fetchBatteryStatus() {
+    try {
+        const response = await fetch('/battery_status');
+        const data = await response.json();
+        
+        const batteryFillElement = document.getElementById('battery-fill');
+        const batteryWarningElement = document.getElementById('battery-warning');
+        const batteryPercentageElement = document.getElementById('battery-percentage');
+        const navbarBatteryFillElement = document.getElementById('navbar-battery-fill');
+
+        // Update the battery fill percentage
+        batteryFillElement.style.width = data.capacity + '%';
+        batteryPercentageElement.textContent = data.capacity.toFixed(2);
+        navbarBatteryFillElement.style.width = data.capacity + '%';
+
+        // Change color if battery is low
+        if (data.capacity < 30) {
+            batteryFillElement.classList.add("low");
+            navbarBatteryFillElement.classList.add("low");
+            batteryWarningElement.style.display = "block";
+        } else {
+            batteryFillElement.classList.remove("low");
+            navbarBatteryFillElement.classList.remove("low");
+            batteryWarningElement.style.display = "none";
+        }
+    } catch (error) {
+        console.error("Error fetching battery status:", error);
+    }
+}
+
+
+    // Update battery status every 5 seconds
+    setInterval(fetchBatteryStatus, 5000);
+    fetchBatteryStatus(); // Initial call to display data
+
+    
+    </script>
+</body>
+</html>

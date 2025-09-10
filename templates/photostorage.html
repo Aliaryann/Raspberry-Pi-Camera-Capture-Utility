@@ -1,0 +1,158 @@
+{% extends "index.html" %}
+
+{% block content %}
+
+<div id="images-container" class="image-gallery">
+    <!-- Images will be dynamically added here by JavaScript -->
+</div>
+
+
+
+<!-- Modal -->
+<div id="imageModal" class="modal">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="modalImage">
+    <div id="caption"></div>
+    <div id="dpi"></div> <!-- Placeholder for DPI -->
+    <div id="filename"></div> <!-- Placeholder for filename -->
+</div>
+
+<style>
+    /* Styles for image gallery and modal */
+    .image-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        max-width: 1200px;
+        margin: auto;
+    }
+    .image-gallery section {
+        width: 100%;
+        text-align: center;
+    }
+    .image-gallery h2 {
+        margin: 15px 0;
+        color: #555;
+    }
+    .image-gallery img {
+        max-width: 200px;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 10px;
+        transition: transform 0.2s ease;
+        cursor: pointer;
+        margin: 10px;
+    }
+    .image-gallery img:hover {
+        transform: scale(1.05);
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 1;
+        overflow: auto;
+    }
+    .modal-content {
+        margin: auto;
+        display: block;
+        width: 100%;
+        max-width: 1000px;
+        border-radius: 20px;
+    }
+    .close {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .close:hover,
+    .close:focus {
+        color: #bbb;
+    }
+    #caption, #dpi, #filename {
+        color: #ccc;
+        text-align: center;
+        margin-top: 15px;
+        font-size: 1.1rem;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    displayImagesSorted();
+});
+
+
+
+function displayImagesSorted() {
+    fetch('/get_images')
+        .then(response => {
+            if (!response.ok) throw new Error(`Error fetching images: ${response.statusText}`);
+            return response.json();
+        })
+        .then(images => {
+            const sortedImages = images.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const imagesContainer = document.getElementById('images-container');
+            imagesContainer.innerHTML = '';
+            const groupedImages = groupImagesByDate(sortedImages);
+            for (const [date, images] of Object.entries(groupedImages)) {
+                const section = document.createElement('section');
+                const sectionTitle = document.createElement('h2');
+                sectionTitle.textContent = date;
+                section.appendChild(sectionTitle);
+                images.forEach(image => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image.url;
+                    imgElement.alt = 'Captured Image';
+                    imgElement.onclick = () => showModal(image.url, `Captured on: ${new Date(image.timestamp).toLocaleString()}`, image.dpi, image.filename);
+                    section.appendChild(imgElement);
+                });
+                imagesContainer.appendChild(section);
+            }
+        })
+        .catch(error => console.error('Error fetching images:', error));
+}
+
+function groupImagesByDate(images) {
+    return images.reduce((acc, image) => {
+        const date = new Date(image.timestamp).toLocaleDateString();
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(image);
+        return acc;
+    }, {});
+}
+
+function showModal(src, captionText, dpi, filename) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    const caption = document.getElementById('caption');
+    const dpiElement = document.getElementById('dpi');
+    const filenameElement = document.getElementById('filename');
+    
+    modal.style.display = 'block';
+    modalImg.src = src;
+    caption.textContent = captionText; // Set the caption text
+    dpiElement.textContent = `DPI: ${dpi}`; // Set the DPI text
+    filenameElement.textContent = `Filename: ${filename}`; // Set the filename text
+
+    const closeBtn = document.getElementsByClassName('close')[0];
+    closeBtn.onclick = () => modal.style.display = 'none';
+
+    modal.onclick = event => {
+        if (event.target === modal) modal.style.display = 'none';
+    };
+}
+</script>
+{% endblock %}
+
